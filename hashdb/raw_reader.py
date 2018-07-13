@@ -20,13 +20,27 @@ class RawReader(object):
     def query(self, hash):
         assert(len(hash) == self.HASH_BYTES_HEX)
         off = self.binsearch(hash)
+        if off == self.maxpos:
+            return None
         k, v = self.read_at(off)
         if k == hash:
             return v
         return None
 
-    # Returns the last offset in [left, right) s.t. the entry at that
-    # offset is <= hash
+    def nextrecord(self, off, max=None):
+        next = self.buffer.find(b"\n", off, max)
+        if next == -1:
+            return max
+        return next + 1
+
+    def prevrecord(self, off, start=None):
+        prev = self.buffer.rfind(b"\n", start, off)
+        if prev == -1:
+            return start
+        return prev + 1
+
+    # Returns the first offset in [left, right) s.t. the entry at that
+    # offset is >= hash, or `right' if no such entry exists
     def binsearch(self, hash, left=None, right=None):
         if left == None:
             left = 0
@@ -40,27 +54,24 @@ class RawReader(object):
 
         while left < right:
             mid = left + (right - left)//2
-            mid = self.buffer.rfind(b"\n", left, mid)
-            if mid == -1:
-                right = left
-                mid = left
-            else:
-                mid += 1
+            mid = self.prevrecord(mid, left)
 
             found, _ = self.read_at(mid)
 
-            if found > hash:
+            if found == hash:
+                return mid
+            elif found > hash:
                 right = mid
             else:
-                left = mid
+                left = self.nextrecord(mid, right)
 
-        if left != len(self.buffer):
+        if left < self.maxpos:
             got, _ = self.read_at(left)
-            assert got <= hash
-            next = self.buffer.find(b"\n", left)
-            if next != -1:
-                got, _ = self.read_at(next+1)
-                assert got > hash
+            assert got >= hash
+        if left != 0:
+            prev = self.prevrecord(left-1, 0)
+            got, _ = self.read_at(prev)
+            assert got < hash
 
         return left
 
