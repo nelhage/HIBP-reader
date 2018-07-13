@@ -13,13 +13,30 @@ class RawReader(object):
     def __init__(self, buffer):
         self.buffer = buffer
         self.maxpos = len(self.buffer)
-        while (self.buffer[self.maxpos-1] == ord(b"\r") or
-               self.buffer[self.maxpos-1] == ord(b"\n")):
-            self.maxpos -= 1
+        self.index = None
+
+    def build_index(self):
+        self.index = [0] * 257
+        def recurse(l, r, loff, roff):
+            mid = (l + r) // 2
+            q = (bytes("{:02x}".format(mid), 'ascii') + b'0'*38).upper()
+            moff = self.binsearch(q, loff, roff)
+            self.index[mid] = moff
+            if mid != l:
+                recurse(l, mid - 1, loff, moff)
+            if mid != r:
+                recurse(mid + 1, r, moff, roff)
+
+        recurse(0, 255, 0, self.maxpos)
+        self.index[256] = self.maxpos
 
     def query(self, hash):
         assert(len(hash) == self.HASH_BYTES_HEX)
-        off = self.binsearch(hash)
+        if self.index:
+            byte = int(hash[:2], 16)
+            off = self.binsearch(hash, self.index[byte], self.index[byte+1])
+        else:
+            off = self.binsearch(hash)
         if off == self.maxpos:
             return None
         k, v = self.read_at(off)
@@ -49,8 +66,7 @@ class RawReader(object):
 
         assert(left == 0 or self.buffer[left-1] == ord(b"\n"))
         assert(right == len(self.buffer)
-               or self.buffer[right] == ord(b"\n")
-               or self.buffer[right] == ord(b"\r"))
+               or self.buffer[right-1] == ord(b"\n"))
 
         while left < right:
             mid = left + (right - left)//2
