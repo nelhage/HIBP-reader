@@ -1,0 +1,18 @@
+import hashdb.raw_reader
+
+TEST_FILE = b"""\
+0000000000000000000000000000000000000000:0
+1111111111111111111111111111111111111111:1
+2222222222222222222222222222222222222222:2
+"""
+
+def test_read_at():
+    reader = hashdb.raw_reader.RawReader(TEST_FILE)
+    assert reader.read_at(0) == (b'0000000000000000000000000000000000000000', b'0')
+    assert reader.read_at(43) == (b'1111111111111111111111111111111111111111', b'1')
+    assert reader.read_at(2*43) == (b'2222222222222222222222222222222222222222', b'2')
+
+    reader = hashdb.raw_reader.RawReader(TEST_FILE.replace(b"\n", b"\r\n"))
+    assert reader.read_at(0) == (b'0000000000000000000000000000000000000000', b'0')
+    assert reader.read_at(44) == (b'1111111111111111111111111111111111111111', b'1')
+    assert reader.read_at(2*44) == (b'2222222222222222222222222222222222222222', b'2')
