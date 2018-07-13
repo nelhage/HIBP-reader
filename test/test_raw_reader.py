@@ -6,6 +6,12 @@ TEST_FILE = b"""\
 2222222222222222222222222222222222222222:2
 """
 
+TEST_FILE_2 = b"""\
+1111111111111111111111111111111111111111:1
+2222222222222222222222222222222222222222:2
+3333333333333333333333333333333333333333:3
+"""
+
 def test_read_at():
     reader = hashdb.raw_reader.RawReader(TEST_FILE)
     assert reader.read_at(0) == (b'0000000000000000000000000000000000000000', b'0')
@@ -16,3 +22,11 @@ def test_read_at():
     assert reader.read_at(0) == (b'0000000000000000000000000000000000000000', b'0')
     assert reader.read_at(44) == (b'1111111111111111111111111111111111111111', b'1')
     assert reader.read_at(2*44) == (b'2222222222222222222222222222222222222222', b'2')
+
+def test_binsearch():
+    reader = hashdb.raw_reader.RawReader(TEST_FILE)
+    assert reader.binsearch(b'0000000000000000000000000000000000000000') == 0
+    assert reader.binsearch(b'0000000000000000000000000000000000000001') == 0
+    assert reader.binsearch(b'1111111111111111111111111111111111111111') == 43
+    assert reader.binsearch(b'1111111111111111111111111111111111111110') == 0
+    assert reader.binsearch(b'ffffffffffffffffffffffffffffffffffffffff') == 2*43
