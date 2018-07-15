@@ -14,14 +14,17 @@ keys = [
 ]
 
 timings = []
+queries = []
 top = time.time()
 for (i, k) in enumerate(keys):
     if i % 1000 == 0:
         print("i={} elapsed={:.2f}s".format(i, time.time() - top))
+    reader.queries = 0
     start = time.time()
     reader.query(k)
     end = time.time()
     timings.append(1000 * (end - start))
+    queries.append(reader.queries)
 
 print("searched {} keys...".format(len(timings)))
 print("avg={:0.2f}ms".format(sum(timings)/len(timings)))
@@ -31,3 +34,5 @@ print("p50={:0.2f}ms".format(timings[len(timings)*50//100]))
 print("p90={:0.2f}ms".format(timings[len(timings)*90//100]))
 print("p99={:0.2f}ms".format(timings[len(timings)*99//100]))
 print("max={:0.2f}ms".format(timings[-1]))
+
+print("average queries={:0.1}".format(sum(queries)/len(queries)))

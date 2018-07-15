@@ -14,6 +14,7 @@ class RawReader(object):
         self.buffer = buffer
         self.maxpos = len(self.buffer)
         self.index = None
+        self.queries = 0
 
     def build_index(self):
         self.index = [0] * 257
@@ -92,6 +93,7 @@ class RawReader(object):
         return left
 
     def read_at(self, off):
+        self.queries += 1
         assert(off == 0 or self.buffer[off-1] == ord(b"\n"))
         assert(off < len(self.buffer))
         end = self.buffer.find(b"\n", off)
