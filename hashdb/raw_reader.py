@@ -3,6 +3,9 @@ import mmap
 class RawReader(object):
     HASH_BYTES_HEX = 40
 
+    INDEX_CHARS = 2
+    INDEX_BITS  = 4 * INDEX_CHARS
+
     @classmethod
     def from_file(cls, path):
         with open(path, 'rb') as fh:
@@ -17,10 +20,10 @@ class RawReader(object):
         self.queries = 0
 
     def build_index(self):
-        self.index = [0] * 257
+        self.index = [0] * (2**self.INDEX_BITS+1)
         def recurse(l, r, loff, roff):
             mid = (l + r) // 2
-            q = (bytes("{:02x}".format(mid), 'ascii') + b'0'*38).upper()
+            q = (bytes("{{:0{}x}}".format(self.INDEX_CHARS).format(mid), 'ascii') + b'0'*(40-self.INDEX_CHARS)).upper()
             moff = self.binsearch(q, loff, roff)
             self.index[mid] = moff
             if mid != l:
@@ -28,13 +31,13 @@ class RawReader(object):
             if mid != r:
                 recurse(mid + 1, r, moff, roff)
 
-        recurse(0, 255, 0, self.maxpos)
-        self.index[256] = self.maxpos
+        recurse(0, 2**self.INDEX_BITS-1, 0, self.maxpos)
+        self.index[-1] = self.maxpos
 
     def query(self, hash):
         assert(len(hash) == self.HASH_BYTES_HEX)
         if self.index:
-            byte = int(hash[:2], 16)
+            byte = int(hash[:self.INDEX_CHARS], 16)
             off = self.binsearch(hash, self.index[byte], self.index[byte+1])
         else:
             off = self.binsearch(hash)

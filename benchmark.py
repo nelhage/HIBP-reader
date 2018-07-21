@@ -4,9 +4,14 @@ import base64
 import time
 
 N = 5000
+BUILD_INDEX = True
 
 reader = hashdb.raw_reader.RawReader.from_file('pwned-passwords-ordered-by-hash.txt')
-reader.build_index()
+if BUILD_INDEX:
+    start = time.time()
+    reader.build_index()
+    end = time.time()
+    print("Built index t={:.2f}s".format(end - start))
 
 keys = [
     base64.b16encode(os.urandom(20))
