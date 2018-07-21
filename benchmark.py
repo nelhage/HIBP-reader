@@ -35,4 +35,7 @@ print("p90={:0.2f}ms".format(timings[len(timings)*90//100]))
 print("p99={:0.2f}ms".format(timings[len(timings)*99//100]))
 print("max={:0.2f}ms".format(timings[-1]))
 
-print("average queries={:0.1}".format(sum(queries)/len(queries)))
+queries.sort()
+print("average queries={:.1f}".format(sum(queries)/len(queries)))
+print("p90 queries={}".format(queries[len(queries)*99//100]))
+print("max queries={}".format(max(queries)))
